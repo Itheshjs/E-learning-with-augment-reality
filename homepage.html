@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="kN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting System</title>
+    <style>
+        /* CSS Styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .menu button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            border: none;
+            background-color: #3498db;
+            color: white;
+            transition: background-color 0.3s;
+        }
+
+        .menu button:hover {
+            background-color: #2980b9;
+        }
+
+        form {
+            margin: 20px 0;
+        }
+
+        form label {
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button[type="button"] {
+            padding: 10px 20px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button[type="button"]:hover {
+            background-color: #27ae60;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .left-aligned {
+            text-align: left;
+        }
+        
+
+    </style>
+</head>
+<body>
+   
+
+    <div class="container">
+        <h1>Election Voting System 2024</h1>
+        <div id="initial-section">
+            <h2>Enter Number of Candidates</h2>
+            <form id="candidatesForm">
+                <input type="number" id="numCandidates" min="1" required>
+                <button type="button" onclick="setCandidates()">Next</button>
+            </form>
+        </div>
+
+        <!-- Candidate names section -->
+        <div id="candidates-section" class="hidden">
+            <h2>Enter Candidate Names</h2>
+            <form id="candidateNamesForm"></form>
+        </div>
+
+        <!-- Vote section -->
+        <div id="vote-section" class="hidden">
+            <h2>Choose your Candidate</h2>
+            <form id="voteForm"></form>
+            <button type="button" onclick="castVote()">Submit Vote</button>
+        </div>
+
+        <div class="menu hidden">
+            <button onclick="showVoteSection()">Cast a Vote</button>
+            <button onclick="displayResults()">View Voting Results</button>
+            <button onclick="findLeadingCandidate()">Leading Candidate</button>
+        </div>
+
+        <!-- Results section -->
+        <div id="results" class="hidden">
+            <h2>Voting Results</h2>
+            <div id="resultsList"></div>
+            <p>Spoiled Votes: <span id="spoiledVotes">0</span></p>
+        </div>
+
+        <!-- Leading candidate section -->
+        <div id="leading" class="hidden">
+            <h2>Leading Candidate</h2>
+            <p id="leader">No leader yet.</p>
+        </div>
+    </div>
+
+    <script>
+        let candidates = [];
+        let voteCounts = [];
+        let spoiledVotes = 0;
+
+        function setCandidates() {
+            const numCandidates = document.getElementById("numCandidates").value;
+            const candidatesSection = document.getElementById("candidates-section");
+            const candidateNamesForm = document.getElementById("candidateNamesForm");
+
+            candidateNamesForm.innerHTML = ''; // Clear previous form
+
+            for (let i = 1; i <= numCandidates; i++) {
+                candidateNamesForm.innerHTML += `
+                    <input type="text" id="candidate${i}" placeholder="Enter Candidate ${i} Name" required><br>
+                `;
+            }
+            candidateNamesForm.innerHTML += '<button type="button" onclick="createVoteSection()">Submit Names</button>';
+
+            document.getElementById("initial-section").classList.add('hidden');
+            candidatesSection.classList.remove('hidden');
+        }
+
+        function createVoteSection() {
+            const candidateNamesForm = document.getElementById("candidateNamesForm");
+            const numCandidates = candidateNamesForm.querySelectorAll('input').length;
+
+            candidates = [];
+            voteCounts = [];
+
+            for (let i = 1; i <= numCandidates; i++) {
+                const candidateName = document.getElementById(`candidate${i}`).value;
+                candidates.push(candidateName);
+                voteCounts.push(0);
+            }
+
+            // Create voting options
+            const voteForm = document.getElementById("voteForm");
+            voteForm.innerHTML = ''; // Clear previous form
+
+            candidates.forEach((candidate, index) => {
+                voteForm.innerHTML += `
+                    <p class="left-aligned">
+                    <input type="radio" name="candidate" value="${index}" id="candidate${index}">
+                    <label for="candidate${index}">${candidate}</label><br>
+                    </p>
+                `;
+            });
+
+            voteForm.innerHTML += `
+                <p class="left-aligned">
+                <input type="radio" name="candidate" value="none" id="none">
+                <label for="none">None of These</label><br>
+                </p>
+            `;
+
+            document.getElementById("candidates-section").classList.add('hidden');
+            document.getElementById("vote-section").classList.remove('hidden');
+            document.querySelector('.menu').classList.remove('hidden');
+        }
+
+        function castVote() {
+            const selectedCandidate = document.querySelector('input[name="candidate"]:checked');
+
+            if (selectedCandidate) {
+                const vote = selectedCandidate.value;
+
+                if (vote === 'none') {
+                    spoiledVotes++;
+                } else {
+                    voteCounts[vote]++;
+                }
+
+                alert("Thank you for voting! You can vote again in 5 seconds.");
+
+                // Disable the vote button and form for 10 seconds
+                document.getElementById("voteForm").reset();
+                document.querySelector('button[onclick="castVote()"]').disabled = true;
+
+                setTimeout(() => {
+                    document.querySelector('button[onclick="castVote()"]').disabled = false;
+                    alert("You can now vote again.");
+                }, 5000); // 5000 milliseconds = 5 seconds
+            } else {
+                alert("Please select a candidate.");
+            }
+        }
+
+        // Display results
+        function displayResults() {
+            document.getElementById('vote-section').classList.add('hidden');
+            document.getElementById('leading').classList.add('hidden');
+            document.getElementById('results').classList.remove('hidden');
+
+            const resultsList = document.getElementById('resultsList');
+            resultsList.innerHTML = '';
+
+            candidates.forEach((candidate, index) => {
+                resultsList.innerHTML += `<p>${candidate}: ${voteCounts[index]}</p>`;
+            });
+
+            document.getElementById('spoiledVotes').textContent = spoiledVotes;
+        }
+
+        // Display leading candidate
+        function findLeadingCandidate() {
+            document.getElementById('vote-section').classList.add('hidden');
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('leading').classList.remove('hidden');
+
+            let leader = "No leader yet.";
+            let maxVotes = Math.max(...voteCounts);
+            let leaders = candidates.filter((_, index) => voteCounts[index] === maxVotes);
+
+            if (leaders.length === 1) {
+                leader = leaders[0];
+            } else if (leaders.length > 1) {
+                leader = "It's a tie!";
+            }
+
+            document.getElementById('leader').textContent = leader;
+        }
+
+        function showVoteSection() {
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('leading').classList.add('hidden');
+            document.getElementById('vote-section').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
